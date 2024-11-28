@@ -1,0 +1,19 @@
+[package]
+name = "competition_new"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+makepad-widgets = { git = "https://github.com/makepad/makepad.git", branch = "rik" }
+tinify-rs = { version = "1.4", features = ["async"] }
+reqwest = { version = "0.12", features = ["blocking"] }
+home = "0.5"
+rfd = "0.15"
+tokio = "1.41"
+
+[profile.release]
+debug = 0
+strip = true
+
+[profile.dev]
+debug = 0
