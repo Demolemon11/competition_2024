@@ -25,6 +25,8 @@ live_design! {
     API_CHECK_OK = dep("crate://self/resources/icons/api_check_ok.svg")
     API_CHECK_ERR = dep("crate://self/resources/icons/api_check_err.svg")
     NO_INTERNET = dep("crate://self/resources/icons/no_internet.svg")
+    PROCESSING = dep("crate://self/resources/icons/processing.svg")
+
 
 
     pub HomeScreen = {{HomeScreen}} {
@@ -189,6 +191,25 @@ live_design! {
                             text: "Incorrect API key."
                         }
                     }
+                    processing = <View> {
+                        align: {x: 0.5, y: 0.5}
+                        visible: false
+                        flow: Down
+                        spacing: 15
+
+                        <Icon> {
+                            draw_icon: {
+                                svg_file: (PROCESSING),
+                                color: #FFFFFF
+                            }
+                            icon_walk: {width: 70 }
+                        }
+
+                        <LogNotice> {
+                            text: "Processing..."
+                        }
+                    }
+
                 }
                 convert_button = <View> {
                     visible: false
@@ -220,6 +241,16 @@ pub struct HomeScreen {
 
 impl Widget for HomeScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        if let Event::Signal = event {
+            self.view(id!(convert_button))
+                .set_visible_and_redraw(cx, true);
+            self.view(id!(processing)).set_visible_and_redraw(cx, false);
+
+            let dir_list = self.portal_list(id!(picture_dirs));
+            dir_list.as_picture_dirs().clean_dirs();
+            dir_list.redraw(cx);
+        }
+
         self.match_event(cx, event);
         self.view.handle_event(cx, event, scope)
     }
@@ -311,29 +342,41 @@ impl MatchEvent for HomeScreen {
         }
 
         if self.button(id!(convert_button.button)).clicked(actions) {
+            self.view(id!(convert_button))
+                .set_visible_and_redraw(cx, false);
+
+            self.view(id!(api_check_ok))
+                .set_visible_and_redraw(cx, false);
+
+            self.view(id!(processing)).set_visible_and_redraw(cx, true);
+
             let picture_dirs = self
                 .portal_list(id!(picture_dirs))
                 .as_picture_dirs()
                 .get_dirs();
+
             log!("picture dirs: {:?}", picture_dirs);
 
-            for dir in picture_dirs.into_iter() {
-                Tinify::new()
-                    .set_key(&self.api_key)
-                    .get_client()
-                    .unwrap()
-                    .from_file(&dir)
-                    .unwrap()
-                    .to_file(format!(
-                        "{}/{}",
-                        &self.result_dir,
-                        dir.file_name().unwrap().to_str().unwrap()
-                    ))
-                    .unwrap();
-            }
+            let api_key = self.api_key.clone();
+            let result_dir = self.result_dir.clone();
 
-            dir_list.as_picture_dirs().clean_dirs();
-            dir_list.redraw(cx)
+            std::thread::spawn(move || {
+                for dir in picture_dirs.into_iter() {
+                    Tinify::new()
+                        .set_key(&api_key)
+                        .get_client()
+                        .unwrap()
+                        .from_file(&dir)
+                        .unwrap()
+                        .to_file(format!(
+                            "{}/{}",
+                            &result_dir,
+                            dir.file_name().unwrap().to_str().unwrap()
+                        ))
+                        .unwrap();
+                }
+                makepad_platform::SignalToUI::set_ui_signal();
+            });
         }
     }
     fn handle_startup(&mut self, _: &mut Cx) {
