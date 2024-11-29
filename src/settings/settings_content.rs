@@ -86,15 +86,6 @@ live_design! {
             spacing: 60
 
             <Label> {
-                text: "This software was made by Yiming Lu <demolemon@outlook.at>"
-                draw_text: {
-                    text_style: <THEME_FONT_ITALIC>{
-                        font_size: 17
-                    }
-                    color: #000000
-                }
-            }
-            <Label> {
                 text: "Last Update: 2024_1128"
                 draw_text: {
                     text_style: {

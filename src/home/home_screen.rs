@@ -202,7 +202,7 @@ live_design! {
                                 svg_file: (PROCESSING),
                                 color: #FFFFFF
                             }
-                            icon_walk: {width: 70 }
+                            icon_walk: {width: 50 }
                         }
 
                         <LogNotice> {
